@@ -39,6 +39,10 @@ public class Account {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    @OneToOne
+    @JoinColumn(name = "account_wallet_id", referencedColumnName = "id")
+    private AccountWallet accountWallet = new AccountWallet();
+
     public Account(String email, String firstName, String lastName) {
         this.email = email;
         this.firstName = firstName;

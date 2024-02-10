@@ -14,3 +14,8 @@ VALUES (
 
 -- Insert user_roles (assigning 'ROLE_ADMIN' to the first user)
 INSERT INTO user_roles (user_id, role_id) VALUES (1, 2);
+
+INSERT INTO wallet (wallet, used, user_id) VALUES
+                                                      ('wallet1', false, 1),
+                                                      ('wallet2', false, NULL),
+                                                      ('wallet3', false, NULL);

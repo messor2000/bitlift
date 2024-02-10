@@ -1,11 +1,13 @@
 package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
-import com.example.backend.dto.payload.request.IdTokenRequestDto;
+import com.example.backend.dto.payload.request.IdTokenRequest;
 import com.example.backend.dto.payload.request.SignupRequest;
 import com.example.backend.entity.Account;
+import com.example.backend.entity.AccountWallet;
 import com.example.backend.entity.ERole;
 import com.example.backend.entity.Role;
+import com.example.backend.repo.AccountWalletRepository;
 import com.example.backend.repo.RoleRepository;
 import com.example.backend.repo.UserRepository;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -31,6 +33,7 @@ import java.util.Set;
 public class AccountService {
     UserRepository userRepository;
     RoleRepository roleRepository;
+    AccountWalletRepository walletRepository;
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
@@ -40,9 +43,10 @@ public class AccountService {
     private final GoogleIdTokenVerifier verifier;
 
     public AccountService(@Value("${app.googleClientId}") String clientId, UserRepository userRepository,
-                          JwtUtils jwtUtils, RoleRepository roleRepository, PasswordEncoder encoder) {
+                          JwtUtils jwtUtils, RoleRepository roleRepository, PasswordEncoder encoder, AccountWalletRepository accountWalletRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.walletRepository = accountWalletRepository;
         this.jwtUtils = jwtUtils;
         this.encoder = encoder;
         NetHttpTransport transport = new NetHttpTransport();
@@ -59,6 +63,14 @@ public class AccountService {
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         roles.add(userRole);
+
+        AccountWallet unusedWallet = walletRepository.findAnyUnusedWallet()
+                .orElseThrow(() -> new RuntimeException("Error: No unused wallet found in the database."));
+        unusedWallet.setUsed(true);
+        unusedWallet.setAccountEmail(signupRequest.getEmail());
+        walletRepository.updateAccountEmailById(unusedWallet.getId(), signupRequest.getEmail());
+
+        account.setAccountWallet(unusedWallet);
         account.setEmail(signupRequest.getEmail());
         account.setPassword(encoder.encode(signupRequest.getPassword()));
 
@@ -67,16 +79,15 @@ public class AccountService {
     }
 
     public String loginUser(Authentication authentication) {
-        String jwt = jwtUtils.generateJwtToken(authentication, false);
-        return jwt;
+        return jwtUtils.generateJwtToken(authentication, false);
     }
 
-    public Account getAccount(Long id) {
-        return userRepository.findById(id).orElse(null);
+    public Account getAccount(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     @Transactional
-    public String loginOAuthGoogle(IdTokenRequestDto requestBody) {
+    public String loginOAuthGoogle(IdTokenRequest requestBody) {
         Account account = verifyIDToken(requestBody.getIdToken());
         if (account == null) {
             throw new IllegalArgumentException();
@@ -93,14 +104,21 @@ public class AccountService {
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
             roles.add(userRole);
+            AccountWallet unusedWallet = walletRepository.findAnyUnusedWallet()
+                    .orElseThrow(() -> new RuntimeException("Error: No unused wallet found in the database."));
+            unusedWallet.setUsed(true);
+            unusedWallet.setAccountEmail(account.getEmail());
+            walletRepository.updateAccountEmailById(unusedWallet.getId(), account.getEmail());
+
+            account.setAccountWallet(unusedWallet);
             account.setRoles(roles);
             userRepository.save(account);
             return account;
         }
-        existingAccount.setFirstName(account.getFirstName());
-        existingAccount.setLastName(account.getLastName());
-        existingAccount.setPictureUrl(account.getPictureUrl());
-        userRepository.save(existingAccount);
+//        existingAccount.setFirstName(account.getFirstName());
+//        existingAccount.setLastName(account.getLastName());
+//        existingAccount.setPictureUrl(account.getPictureUrl());
+//        userRepository.save(existingAccount);
         return existingAccount;
     }
 

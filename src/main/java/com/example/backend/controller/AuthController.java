@@ -1,13 +1,11 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.payload.request.IdTokenRequestDto;
+import com.example.backend.dto.payload.request.IdTokenRequest;
 import com.example.backend.dto.payload.request.LoginRequest;
 import com.example.backend.dto.payload.request.SignupRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.service.AccountService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -17,8 +15,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @AllArgsConstructor
@@ -55,7 +51,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth")
-    public ResponseEntity<?> loginWithGoogleOauth2(@RequestBody IdTokenRequestDto requestBody, HttpServletResponse response) {
+    public ResponseEntity<?> loginWithGoogleOauth2(@RequestBody IdTokenRequest requestBody, HttpServletResponse response) {
         String authToken = accountService.loginOAuthGoogle(requestBody);
         final ResponseCookie cookie = ResponseCookie.from("AUTH-TOKEN", authToken)
                 .httpOnly(true)

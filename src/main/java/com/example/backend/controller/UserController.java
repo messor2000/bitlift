@@ -1,14 +1,26 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.payload.request.LoginRequest;
+import com.example.backend.dto.payload.request.NewWalletRequest;
+import com.example.backend.entity.Account;
+import com.example.backend.entity.AccountWallet;
+import com.example.backend.service.AccountService;
+import com.example.backend.service.WalletService;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/api")
 public class UserController {
+
+    @Autowired
+    private AccountService accountService;
+
     @GetMapping("/all")
     public String allAccess() {
         return "Public Content.";
@@ -16,13 +28,8 @@ public class UserController {
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public String userAccess() {
-        return "User Content.";
-    }
-
-    @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String adminAccess() {
-        return "Admin Board.";
+    public ResponseEntity<Account> userAccess(Principal principal) {
+        Account account = accountService.getAccount(principal.getName());
+        return ResponseEntity.ok().body(account);
     }
 }

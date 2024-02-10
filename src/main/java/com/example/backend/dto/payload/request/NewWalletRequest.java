@@ -9,8 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class IdTokenRequestDto {
-
-    private String idToken;
+public class NewWalletRequest {
+    private String wallet;
 }
-

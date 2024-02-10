@@ -21,3 +21,12 @@ CREATE TABLE user_roles (
                             FOREIGN KEY (user_id) REFERENCES users (id),
                             FOREIGN KEY (role_id) REFERENCES roles (id)
 );
+
+-- Create wallet table
+CREATE TABLE wallet (
+                        id SERIAL PRIMARY KEY,
+                        wallet VARCHAR(255) NOT NULL,
+                        used BOOLEAN DEFAULT false,
+                        user_id INTEGER,
+                        FOREIGN KEY (user_id) REFERENCES users (id)
+);

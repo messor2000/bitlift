@@ -60,12 +60,12 @@ public class WebSecurityConfig {
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
                 .logout((logout) -> logout
                         .deleteCookies("AUTH-TOKEN")
-                        .logoutSuccessUrl("/api/test/all")
+                        .logoutSuccessUrl("/api/all")
                         .permitAll()
                 )
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/api/test/**").permitAll()
+                                .requestMatchers("/api/**").permitAll()
                                 .anyRequest().authenticated()
                 );
 
