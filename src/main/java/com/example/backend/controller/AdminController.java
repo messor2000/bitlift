@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.payload.request.NewWalletRequest;
+import com.example.backend.dto.request.NewWalletRequest;
 import com.example.backend.entity.AccountWallet;
 import com.example.backend.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -31,7 +31,19 @@ public class Account {
 
     private String lastName;
 
-    private String pictureUrl;
+    private String fatherName;
+
+    private String address;
+
+    private String zipCode;
+
+    private String city;
+
+    private String country;
+
+    private String linkToFirstPassportPage;
+
+    private String linkToSecondPassportPage;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -42,6 +54,9 @@ public class Account {
     @OneToOne
     @JoinColumn(name = "account_wallet_id", referencedColumnName = "id")
     private AccountWallet accountWallet = new AccountWallet();
+
+    @Column(name = "is_enabled")
+    private boolean isEnabled;
 
     public Account(String email, String firstName, String lastName) {
         this.email = email;

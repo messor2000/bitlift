@@ -1,4 +1,4 @@
-package com.example.backend.dto.payload.response;
+package com.example.backend.dto.response;
 
 import java.util.List;
 

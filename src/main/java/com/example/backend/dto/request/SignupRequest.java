@@ -1,4 +1,4 @@
-package com.example.backend.dto.payload.request;
+package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

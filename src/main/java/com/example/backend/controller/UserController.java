@@ -1,12 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.payload.request.LoginRequest;
-import com.example.backend.dto.payload.request.NewWalletRequest;
 import com.example.backend.entity.Account;
-import com.example.backend.entity.AccountWallet;
 import com.example.backend.service.AccountService;
-import com.example.backend.service.WalletService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

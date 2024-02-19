@@ -1,13 +1,17 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.payload.request.IdTokenRequest;
-import com.example.backend.dto.payload.request.LoginRequest;
-import com.example.backend.dto.payload.request.SignupRequest;
+import com.example.backend.dto.request.IdTokenRequest;
+import com.example.backend.dto.request.LoginRequest;
+import com.example.backend.dto.request.SignupRequest;
+import com.example.backend.dto.request.VerifyTokenDtoRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.service.AccountService;
+import com.example.backend.service.otp.OtpService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,7 +25,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AccountService accountService;
+    private final OtpService otpService;
     AuthenticationManager authenticationManager;
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
+        Account account = accountService.registerUser(signUpRequest);
+        otpService.generateOtp(signUpRequest.getEmail());
+
+        return ResponseEntity.ok(account);
+    }
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
@@ -43,13 +56,6 @@ public class AuthController {
         return ResponseEntity.ok(authToken);
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
-        Account account = accountService.registerUser(signUpRequest);
-
-        return ResponseEntity.ok(account);
-    }
-
     @PostMapping("/oauth")
     public ResponseEntity<?> loginWithGoogleOauth2(@RequestBody IdTokenRequest requestBody, HttpServletResponse response) {
         String authToken = accountService.loginOAuthGoogle(requestBody);
@@ -61,5 +67,20 @@ public class AuthController {
                 .build();
         response.addHeader(com.google.common.net.HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(authToken);
+    }
+
+    @PostMapping(value = "/verify")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyTokenDtoRequest verifyTokenRequest) {
+        String email = verifyTokenRequest.getEmail();
+        Integer otp = verifyTokenRequest.getOtp();
+        Boolean rememberMe = verifyTokenRequest.getRememberMe();
+
+        boolean isOtpValid = otpService.validateOTP(email, otp);
+        if (!isOtpValid) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        accountService.activateUserAccount(email);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

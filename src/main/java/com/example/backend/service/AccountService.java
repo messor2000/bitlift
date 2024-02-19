@@ -1,8 +1,8 @@
 package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
-import com.example.backend.dto.payload.request.IdTokenRequest;
-import com.example.backend.dto.payload.request.SignupRequest;
+import com.example.backend.dto.request.IdTokenRequest;
+import com.example.backend.dto.request.SignupRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.AccountWallet;
 import com.example.backend.entity.ERole;
@@ -83,7 +83,8 @@ public class AccountService {
     }
 
     public Account getAccount(String email) {
-        return userRepository.findByEmail(email).orElse(null);
+        return userRepository.findByEmail(email).orElseThrow(() ->
+                new RuntimeException("Error: User does not exists by provided email in the database."));
     }
 
     @Transactional
@@ -115,12 +116,33 @@ public class AccountService {
             userRepository.save(account);
             return account;
         }
-//        existingAccount.setFirstName(account.getFirstName());
-//        existingAccount.setLastName(account.getLastName());
-//        existingAccount.setPictureUrl(account.getPictureUrl());
-//        userRepository.save(existingAccount);
         return existingAccount;
     }
+
+//    @Transactional
+//    public Account updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) {
+//        Account existingAccount = getAccount(accountEmail);
+//        if (existingAccount != null) {
+//            existingAccount.setFirstName(accountInfoRequest.getFirstName());
+//            existingAccount.setLastName(accountInfoRequest.getLastName());
+//            existingAccount.setFatherName(accountInfoRequest.getFatherName());
+//            existingAccount.setAddress(accountInfoRequest.getAddress());
+//            existingAccount.setZipCode(accountInfoRequest.getZipCode());
+//            existingAccount.setCity(accountInfoRequest.getCity());
+//            existingAccount.setCountry(accountInfoRequest.getCountry());
+//            existingAccount.setLinkToFirstPassportPage();
+//            existingAccount.setLinkToSecondPassportPage();
+//        }
+//
+//    }
+
+    public void activateUserAccount(String email) {
+        Account account = getAccount(email);
+        account.setEnabled(true);
+
+        userRepository.save(account);
+    }
+
 
     private Account verifyIDToken(String idToken) {
         try {

@@ -1,4 +1,4 @@
-package com.example.backend.dto.payload.request;
+package com.example.backend.dto.request;
 
 import lombok.Data;
 import lombok.Getter;

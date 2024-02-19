@@ -1,4 +1,4 @@
-package com.example.backend.dto.payload.request;
+package com.example.backend.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class IdTokenRequest {
-    private String idToken;
+public class NewWalletRequest {
+    private String wallet;
 }
-

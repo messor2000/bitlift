@@ -3,6 +3,17 @@ CREATE TABLE roles (
                        name VARCHAR(64) NOT NULL
 );
 
+-- CREATE TABLE users (
+--                        id SERIAL PRIMARY KEY,
+--                        email VARCHAR(255) NOT NULL,
+--                        username VARCHAR(64),
+--                        password VARCHAR(255),
+--                        first_name VARCHAR(64),
+--                        last_name VARCHAR(64),
+--                        is_enabled BOOL,
+--                        UNIQUE(email)
+-- );
+
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        email VARCHAR(255) NOT NULL,
@@ -10,7 +21,14 @@ CREATE TABLE users (
                        password VARCHAR(255),
                        first_name VARCHAR(64),
                        last_name VARCHAR(64),
-                       picture_url VARCHAR(255),
+                       father_name VARCHAR(64),
+                       address VARCHAR(255),
+                       zip_code VARCHAR(20),
+                       city VARCHAR(100),
+                       country VARCHAR(100),
+                       link_to_first_passport_page VARCHAR(255),
+                       link_to_second_passport_page VARCHAR(255),
+                       is_enabled BOOLEAN,
                        UNIQUE(email)
 );
 
