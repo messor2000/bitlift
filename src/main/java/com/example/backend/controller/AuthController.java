@@ -93,7 +93,7 @@ public class AuthController {
         if (emailDTO != null) {
             if (emailService.sendSimpleMessage(emailDTO)) {
                 System.out.println("OTP Confirmed");
-                return ResponseEntity.ok().build();
+                return ResponseEntity.ok(HttpStatus.OK);
             }
         }
 
@@ -108,7 +108,7 @@ public class AuthController {
 
         smsService.sendSms(account.getPhone(), otp);
 
-        return ResponseEntity.ok(ResponseEntity.ok());
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PostMapping(value = "/verify")

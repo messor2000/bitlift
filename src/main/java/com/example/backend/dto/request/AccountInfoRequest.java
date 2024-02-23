@@ -1,5 +1,6 @@
 package com.example.backend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +23,9 @@ public class AccountInfoRequest {
 
     private String country;
 
+    @JsonIgnore
     private String linkToFirstPassportPage;
 
+    @JsonIgnore
     private String linkToSecondPassportPage;
 }
