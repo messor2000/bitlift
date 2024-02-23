@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
+import com.example.backend.dto.request.AccountInfoRequest;
 import com.example.backend.dto.request.IdTokenRequest;
 import com.example.backend.dto.request.SignupRequest;
 import com.example.backend.entity.Account;
@@ -17,6 +18,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -56,7 +59,7 @@ public class AccountService {
                 .build();
     }
 
-    public Account registerUser(SignupRequest signupRequest) {
+    public String registerUser(SignupRequest signupRequest) {
         Account account = new Account();
         Set<Role> roles = new HashSet<>();
 
@@ -72,10 +75,13 @@ public class AccountService {
 
         account.setAccountWallet(unusedWallet);
         account.setEmail(signupRequest.getEmail());
+        account.setPhone(signupRequest.getPhone());
         account.setPassword(encoder.encode(signupRequest.getPassword()));
 
         account.setRoles(roles);
-        return userRepository.save(account);
+
+        Account createdAccount = userRepository.save(account);
+        return jwtUtils.createToken(createdAccount, false);
     }
 
     public String loginUser(Authentication authentication) {
@@ -119,22 +125,23 @@ public class AccountService {
         return existingAccount;
     }
 
-//    @Transactional
-//    public Account updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) {
-//        Account existingAccount = getAccount(accountEmail);
-//        if (existingAccount != null) {
-//            existingAccount.setFirstName(accountInfoRequest.getFirstName());
-//            existingAccount.setLastName(accountInfoRequest.getLastName());
-//            existingAccount.setFatherName(accountInfoRequest.getFatherName());
-//            existingAccount.setAddress(accountInfoRequest.getAddress());
-//            existingAccount.setZipCode(accountInfoRequest.getZipCode());
-//            existingAccount.setCity(accountInfoRequest.getCity());
-//            existingAccount.setCountry(accountInfoRequest.getCountry());
-//            existingAccount.setLinkToFirstPassportPage();
-//            existingAccount.setLinkToSecondPassportPage();
-//        }
-//
-//    }
+    @Transactional
+    public Account updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) {
+        Account existingAccount = getAccount(accountEmail);
+        if (existingAccount != null) {
+            existingAccount.setFirstName(accountInfoRequest.getFirstName());
+            existingAccount.setLastName(accountInfoRequest.getLastName());
+            existingAccount.setFatherName(accountInfoRequest.getFatherName());
+            existingAccount.setAddress(accountInfoRequest.getAddress());
+            existingAccount.setZipCode(accountInfoRequest.getZipCode());
+            existingAccount.setCity(accountInfoRequest.getCity());
+            existingAccount.setCountry(accountInfoRequest.getCountry());
+        }
+
+        assert existingAccount != null;
+        userRepository.save(existingAccount);
+        return existingAccount;
+    }
 
     public void activateUserAccount(String email) {
         Account account = getAccount(email);
@@ -160,5 +167,12 @@ public class AccountService {
         } catch (GeneralSecurityException | IOException e) {
             return null;
         }
+    }
+
+    public boolean isEnabled(Principal principal) {
+        String accountEmail = principal.getName();
+        Account account = userRepository.findByEmail(accountEmail).orElseThrow(() ->
+                new RuntimeException("Error: User does not exists by provided email in the database."));;
+        return account.isEnabled();
     }
 }

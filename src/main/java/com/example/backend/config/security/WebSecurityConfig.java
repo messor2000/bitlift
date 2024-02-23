@@ -60,7 +60,7 @@ public class WebSecurityConfig {
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
                 .logout((logout) -> logout
                         .deleteCookies("AUTH-TOKEN")
-                        .logoutSuccessUrl("/api/all")
+                        .logoutSuccessUrl("/user/all")
                         .permitAll()
                 )
                 .authorizeHttpRequests(auth ->

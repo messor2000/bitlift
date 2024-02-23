@@ -28,47 +28,53 @@ public class OtpService {
         this.accountService = accountService;
     }
 
-    /**
-     * Method for generate OTP number
-     *
-     * @param key - provided key (username in this case)
-     * @return boolean value (true|false)
-     */
-    public Boolean generateOtp(String key) {
-        // generate otp
+//    /**
+//     * Method for generate OTP number
+//     *
+//     * @param key - provided key (username in this case)
+//     * @return boolean value (true|false)
+//     */
+//    public Boolean generateOtp(String key) {
+//        // generate otp
+//        Integer otpValue = otpGenerator.generateOTP(key);
+//        if (otpValue == -1) {
+//            LOGGER.error("OTP generator is not working...");
+//            return false;
+//        }
+//
+//        LOGGER.info("Generated OTP: {}", otpValue);
+//
+//        // fetch user e-mail from database
+//        Account account = accountService.getAccount(key);
+//        String userEmail = account.getEmail();
+//        List<String> recipients = new ArrayList<>();
+//        recipients.add(userEmail);
+//
+//        // generate emailDTO object
+//        EmailDtoRequest emailDTO = new EmailDtoRequest();
+//        emailDTO.setSubject("Spring Boot OTP Password.");
+//        emailDTO.setBody("OTP Password: " + otpValue);
+//        emailDTO.setRecipients(recipients);
+//
+//        // send generated e-mail
+//        return emailService.sendSimpleMessage(emailDTO);
+//    }
+
+    public int generateOtp(String key) {
         Integer otpValue = otpGenerator.generateOTP(key);
         if (otpValue == -1) {
             LOGGER.error("OTP generator is not working...");
-            return false;
+            return 0;
         }
 
         LOGGER.info("Generated OTP: {}", otpValue);
 
-        // fetch user e-mail from database
-        Account account = accountService.getAccount(key);
-        String userEmail = account.getEmail();
-        List<String> recipients = new ArrayList<>();
-        recipients.add(userEmail);
-
-        // generate emailDTO object
-        EmailDtoRequest emailDTO = new EmailDtoRequest();
-        emailDTO.setSubject("Spring Boot OTP Password.");
-        emailDTO.setBody("OTP Password: " + otpValue);
-        emailDTO.setRecipients(recipients);
-
         // send generated e-mail
-        return emailService.sendSimpleMessage(emailDTO);
+        return otpValue;
     }
 
-    /**
-     * Method for validating provided OTP
-     *
-     * @param key       - provided key
-     * @param otpNumber - provided OTP number
-     * @return boolean value (true|false)
-     */
+
     public Boolean validateOTP(String key, Integer otpNumber) {
-        // get OTP from cache
         Integer cacheOTP = otpGenerator.getOPTByKey(key);
         if (cacheOTP != null && cacheOTP.equals(otpNumber)) {
             otpGenerator.clearOTPFromCache(key);

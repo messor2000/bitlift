@@ -9,10 +9,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VerifyTokenDtoRequest {
-
-    @NotNull
-    private String email;
-
     @NotNull
     private Integer otp;
 

@@ -5,26 +5,26 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Set;
 
 @Data
 @Getter
 @Setter
 public class SignupRequest {
-  @NotBlank
-  @Size(min = 3, max = 20)
-  private String username;
+    @NotBlank
+    @Size(min = 3, max = 20)
+    private String username;
 
-  @NotBlank
-  @Size(max = 50)
-  @Email
-  private String email;
+    @NotBlank
+    @Size(max = 50)
+    @Email
+    private String email;
 
-  private String phone;
+    @NotBlank
+    private String phone;
 
-  private String referralCode;
+    private String referralCode;
 
-  @NotBlank
+    @NotBlank
 //  @Size(min = 6, max = 40)
-  private String password;
+    private String password;
 }

@@ -26,11 +26,11 @@ import java.util.*;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${bezkoder.app.jwtSecret}")
+    @Value("${app.jwtSecret}")
     private String jwtSecret;
     private static final long TOKEN_VALIDITY = 86400000L;
     private static final long TOKEN_VALIDITY_REMEMBER = 2592000000L;
-    @Value("${bezkoder.app.jwtExpirationMs}")
+    @Value("${app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication, boolean rememberMe) {
@@ -62,7 +62,7 @@ public class JwtUtils {
         claims.put("role", ERole.ROLE_USER);
 
         return Jwts.builder()
-                .setSubject(account.getUsername())
+                .setSubject(account.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(validity)
                 .addClaims(claims)
