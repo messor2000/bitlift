@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.dto.request.*;
 import com.example.backend.entity.Account;
 import com.example.backend.service.AccountService;
+import com.example.backend.service.CaptchaService;
 import com.example.backend.service.EmailService;
 import com.example.backend.service.SmsService;
 import com.example.backend.service.otp.OtpService;
@@ -19,7 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.security.Principal;
+import java.util.Objects;
 
 @RestController
 @AllArgsConstructor
@@ -29,7 +32,13 @@ public class AuthController {
     private final OtpService otpService;
     private final EmailService emailService;
     private final SmsService smsService;
+    private final CaptchaService captchaService;
     AuthenticationManager authenticationManager;
+
+//    @GetMapping("/user")
+//    public ResponseEntity<?> getAccountByMailOrPhone(@RequestBody FindAccountDtoRequest findAccountDtoRequest, HttpServletResponse response) {
+//
+//    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest, HttpServletResponse response) {
@@ -109,6 +118,22 @@ public class AuthController {
         smsService.sendSms(account.getPhone(), otp);
 
         return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/captcha/verify")
+    public ResponseEntity<?> verifyCaptcha(@Valid @RequestBody CaptchaDataDtoRequest captchaDataDtoRequest) throws IOException {
+        String captchaValue = captchaDataDtoRequest.getCaptchaValue();
+
+        String resultCaptcha = captchaService.verifyCaptcha(captchaValue);
+
+        if (Objects.equals(resultCaptcha, "{  success: false,  error-codes: [    timeout-or-duplicate  ]}")) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (Objects.equals(resultCaptcha, "{  success: false,  error-codes: [    invalid-input-response  ]}")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(resultCaptcha);
     }
 
     @PostMapping(value = "/verify")
