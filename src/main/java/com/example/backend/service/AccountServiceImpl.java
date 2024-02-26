@@ -2,15 +2,19 @@ package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
 import com.example.backend.dto.request.AccountInfoRequest;
+import com.example.backend.dto.request.FindAccountDtoRequest;
 import com.example.backend.dto.request.IdTokenRequest;
 import com.example.backend.dto.request.SignupRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.AccountWallet;
 import com.example.backend.entity.ERole;
 import com.example.backend.entity.Role;
+import com.example.backend.error.AccountAlreadyExistsException;
+import com.example.backend.error.AccountNotFoundException;
 import com.example.backend.repo.AccountWalletRepository;
 import com.example.backend.repo.RoleRepository;
 import com.example.backend.repo.UserRepository;
+import com.example.backend.service.interfaces.AccountService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -18,7 +22,6 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,7 +36,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-public class AccountService {
+public class AccountServiceImpl implements AccountService {
     UserRepository userRepository;
     RoleRepository roleRepository;
     AccountWalletRepository walletRepository;
@@ -45,8 +48,8 @@ public class AccountService {
     PasswordEncoder encoder;
     private final GoogleIdTokenVerifier verifier;
 
-    public AccountService(@Value("${app.googleClientId}") String clientId, UserRepository userRepository,
-                          JwtUtils jwtUtils, RoleRepository roleRepository, PasswordEncoder encoder, AccountWalletRepository accountWalletRepository) {
+    public AccountServiceImpl(@Value("${app.googleClientId}") String clientId, UserRepository userRepository,
+                              JwtUtils jwtUtils, RoleRepository roleRepository, PasswordEncoder encoder, AccountWalletRepository accountWalletRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.walletRepository = accountWalletRepository;
@@ -60,6 +63,10 @@ public class AccountService {
     }
 
     public String registerUser(SignupRequest signupRequest) {
+        if (userRepository.existsByEmail(signupRequest.getEmail())) {
+            throw new AccountAlreadyExistsException("Error: User already exists");
+        }
+
         Account account = new Account();
         Set<Role> roles = new HashSet<>();
 
@@ -90,14 +97,30 @@ public class AccountService {
 
     public Account getAccount(String email) {
         return userRepository.findByEmail(email).orElseThrow(() ->
-                new RuntimeException("Error: User does not exists by provided email in the database."));
+                new AccountNotFoundException("Error: User does not exists by provided email in the database."));
+    }
+
+    public Account getAccountByPhone(String phone) {
+        return userRepository.findByPhone(phone).orElseThrow(() ->
+                new AccountNotFoundException("Error: User does not exists by provided phone in the database."));
+    }
+
+    public Account getAccountForLogin(FindAccountDtoRequest findAccountDtoRequest) {
+        String email = findAccountDtoRequest.getAccountEmail();
+        String phone = findAccountDtoRequest.getAccountPhone();
+
+        if (email != null) {
+            return getAccount(email);
+        } else {
+            return getAccountByPhone(phone);
+        }
     }
 
     @Transactional
     public String loginOAuthGoogle(IdTokenRequest requestBody) {
         Account account = verifyIDToken(requestBody.getIdToken());
         if (account == null) {
-            throw new IllegalArgumentException();
+            throw new AccountNotFoundException("Error: User can not be logged using Google account");
         }
         account = createOrUpdateUser(account);
         return jwtUtils.createToken(account, false);
@@ -143,6 +166,18 @@ public class AccountService {
         return existingAccount;
     }
 
+    public void updateDocumentLink(String email, String link, int page) {
+        Account account = getAccount(email);
+
+        if (page == 1) {
+            account.setLinkToFirstPassportPage(link);
+        } else if (page == 2) {
+            account.setLinkToSecondPassportPage(link);
+        }
+
+        userRepository.save(account);
+    }
+
     public void activateUserAccount(String email) {
         Account account = getAccount(email);
         account.setEnabled(true);
@@ -171,8 +206,7 @@ public class AccountService {
 
     public boolean isEnabled(Principal principal) {
         String accountEmail = principal.getName();
-        Account account = userRepository.findByEmail(accountEmail).orElseThrow(() ->
-                new RuntimeException("Error: User does not exists by provided email in the database."));;
+        Account account = getAccount(accountEmail);
         return account.isEnabled();
     }
 }

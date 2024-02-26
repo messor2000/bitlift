@@ -14,7 +14,8 @@ import java.util.Set;
 @Entity
 @Table(name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = "email")
+                @UniqueConstraint(columnNames = "email"),
+                @UniqueConstraint(columnNames = "phone")
         })
 public class Account {
     @Id

@@ -20,7 +20,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender emailSender;
     @Autowired
-    private AccountService accountService;
+    private AccountServiceImpl accountService;
 
     /**
      * Method for sending simple e-mail message.

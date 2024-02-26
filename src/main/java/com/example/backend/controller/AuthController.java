@@ -2,10 +2,12 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.request.*;
 import com.example.backend.entity.Account;
-import com.example.backend.service.AccountService;
+import com.example.backend.error.AccountAlreadyExistsException;
+import com.example.backend.error.AccountNotFoundException;
 import com.example.backend.service.CaptchaService;
 import com.example.backend.service.EmailService;
 import com.example.backend.service.SmsService;
+import com.example.backend.service.interfaces.AccountService;
 import com.example.backend.service.otp.OtpService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -35,13 +37,16 @@ public class AuthController {
     private final CaptchaService captchaService;
     AuthenticationManager authenticationManager;
 
-//    @GetMapping("/user")
-//    public ResponseEntity<?> getAccountByMailOrPhone(@RequestBody FindAccountDtoRequest findAccountDtoRequest, HttpServletResponse response) {
-//
-//    }
+    @GetMapping("/user")
+    public ResponseEntity<?> getAccountByMailOrPhone(@RequestBody FindAccountDtoRequest findAccountDtoRequest,
+                                                     HttpServletResponse response) throws AccountNotFoundException {
+        Account account = accountService.getAccountForLogin(findAccountDtoRequest);
+
+        return ResponseEntity.ok(Objects.requireNonNullElse(account, HttpStatus.NOT_FOUND));
+    }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest, HttpServletResponse response) {
+    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest, HttpServletResponse response) throws AccountAlreadyExistsException {
         String authToken = accountService.registerUser(signUpRequest);
 
         final ResponseCookie cookie = ResponseCookie.from("AUTH-TOKEN", authToken)
@@ -56,7 +61,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest, HttpServletResponse response) throws AccountNotFoundException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
@@ -76,7 +81,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth")
-    public ResponseEntity<?> loginWithGoogleOauth2(@RequestBody IdTokenRequest requestBody, HttpServletResponse response) {
+    public ResponseEntity<?> loginWithGoogleOauth2(@RequestBody IdTokenRequest requestBody, HttpServletResponse response) throws AccountNotFoundException {
         String authToken = accountService.loginOAuthGoogle(requestBody);
         final ResponseCookie cookie = ResponseCookie.from("AUTH-TOKEN", authToken)
                 .httpOnly(true)
@@ -89,7 +94,7 @@ public class AuthController {
     }
 
     @PostMapping("/send/otp/email")
-    public ResponseEntity<?> sendOptViaEmail(Principal principal) {
+    public ResponseEntity<?> sendOptViaEmail(Principal principal) throws AccountNotFoundException {
         String accountEmail = principal.getName();
 
         int otp = otpService.generateOtp(accountEmail);
@@ -110,7 +115,7 @@ public class AuthController {
     }
 
     @PostMapping("/send/otp/sms")
-    public ResponseEntity<?> sendOptViaPhone(Principal principal) {
+    public ResponseEntity<?> sendOptViaPhone(Principal principal) throws AccountNotFoundException {
         Account account = accountService.getAccount(principal.getName());
 
         int otp = otpService.generateOtp(account.getEmail());
@@ -121,7 +126,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/captcha/verify")
-    public ResponseEntity<?> verifyCaptcha(@Valid @RequestBody CaptchaDataDtoRequest captchaDataDtoRequest) throws IOException {
+    public ResponseEntity<?> verifyCaptcha(@Valid @RequestBody CaptchaDataDtoRequest captchaDataDtoRequest) throws IOException, AccountNotFoundException {
         String captchaValue = captchaDataDtoRequest.getCaptchaValue();
 
         String resultCaptcha = captchaService.verifyCaptcha(captchaValue);
@@ -137,7 +142,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/verify")
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyTokenDtoRequest verifyTokenRequest, Principal principal) {
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyTokenDtoRequest verifyTokenRequest, Principal principal) throws AccountNotFoundException {
         String email = principal.getName();
         Integer otp = verifyTokenRequest.getOtp();
         Boolean rememberMe = verifyTokenRequest.getRememberMe();
@@ -149,5 +154,15 @@ public class AuthController {
 
         accountService.activateUserAccount(email);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ExceptionHandler(value = AccountAlreadyExistsException.class)
+    public ResponseEntity<String> AccountAlreadyExistException(AccountAlreadyExistsException AccountAlreadyExistsException) {
+        return new ResponseEntity<>("Account already exists", HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(value = AccountNotFoundException.class)
+    public ResponseEntity<String> AccountNotFoundException(AccountNotFoundException accountNotFoundException) {
+        return new ResponseEntity<>("Account not found", HttpStatus.NOT_FOUND);
     }
 }
