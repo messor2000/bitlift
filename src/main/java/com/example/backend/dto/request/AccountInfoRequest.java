@@ -23,6 +23,8 @@ public class AccountInfoRequest {
 
     private String country;
 
+    private String documentCountry;
+
     @JsonIgnore
     private String linkToFirstPassportPage;
 

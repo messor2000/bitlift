@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,14 +8,13 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
+@AllArgsConstructor
 public class AccountDto {
     private String email;
 
     private String phone;
 
     private String username;
-
-    private String password;
 
     private String firstName;
 
@@ -29,4 +29,6 @@ public class AccountDto {
     private String city;
 
     private String country;
+
+    private String documentCountry;
 }

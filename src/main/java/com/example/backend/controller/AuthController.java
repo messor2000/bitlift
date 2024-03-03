@@ -9,6 +9,8 @@ import com.example.backend.service.EmailService;
 import com.example.backend.service.SmsService;
 import com.example.backend.service.interfaces.AccountService;
 import com.example.backend.service.otp.OtpService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -158,9 +160,24 @@ public class AuthController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        // TODO: remove "AUTH-TOKEN" from HEADER
-
         accountService.activateUserAccount(email);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/complete-registration")
+    public ResponseEntity<?> completeRegistration(HttpServletResponse response, HttpServletRequest request) throws AccountNotFoundException {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("AUTH-TOKEN".equals(cookie.getName())) {
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
+                    break;
+                }
+            }
+        }
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

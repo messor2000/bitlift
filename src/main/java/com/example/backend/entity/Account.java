@@ -47,6 +47,8 @@ public class Account {
 
     private String country;
 
+    private String documentCountry;
+
     private String linkToFirstPassportPage;
 
     private String linkToSecondPassportPage;
@@ -69,20 +71,6 @@ public class Account {
     private int failedLoginAttempts;
 
     private LocalDateTime lastLoginAttempt;
-//
-//    public boolean isAccountLocked() {
-//        // Implement logic to check if the account is locked
-//        final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
-//        final Duration LOCKOUT_DURATION = Duration.ofHours(2);
-//
-//        if (failedLoginAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
-//            // Check if the last login attempt was within the lockout duration
-//            LocalDateTime now = LocalDateTime.now();
-//            LocalDateTime lockoutEndTime = lastLoginAttempt.plus(LOCKOUT_DURATION);
-//            return now.isBefore(lockoutEndTime);
-//        }
-//        return false;
-//    }
 
      // TODO: add verifications documents
    // private int failedDocumentsVerificationAttempts;

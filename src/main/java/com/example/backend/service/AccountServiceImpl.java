@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
+import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.AccountInfoRequest;
 import com.example.backend.dto.request.FindAccountDtoRequest;
 import com.example.backend.dto.request.IdTokenRequest;
@@ -103,6 +104,15 @@ public class AccountServiceImpl implements AccountService {
         return jwtUtils.generateJwtToken(authentication, false);
     }
 
+    public AccountDto getAccountDto(String email) {
+        Account account = userRepository.findByEmail(email).orElseThrow(() ->
+                new AccountNotFoundException("Error: User does not exists by provided email in the database."));
+
+        return new AccountDto(account.getEmail(), account.getPhone(), account.getUsername(), account.getFatherName(), account.getLastName(),
+                account.getFatherName(), account.getAddress(), account.getZipCode(), account.getCity(),
+                account.getCountry(), account.getDocumentCountry());
+    }
+
     public Account getAccount(String email) {
         return userRepository.findByEmail(email).orElseThrow(() ->
                 new AccountNotFoundException("Error: User does not exists by provided email in the database."));
@@ -161,7 +171,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Transactional
-    public Account updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) {
+    public AccountDto updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) {
         Account existingAccount = getAccount(accountEmail);
         if (existingAccount != null) {
             existingAccount.setFirstName(accountInfoRequest.getFirstName());
@@ -175,7 +185,10 @@ public class AccountServiceImpl implements AccountService {
 
         assert existingAccount != null;
         userRepository.save(existingAccount);
-        return existingAccount;
+
+        return getAccountDto(accountEmail);
+
+//        return existingAccount;
     }
 
     public void updateDocumentLink(String email, String link, int page) {

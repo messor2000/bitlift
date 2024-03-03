@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.AccountInfoRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.error.AccountNotFoundException;
@@ -37,10 +38,10 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
         }
         if (accountService.isNonLocked(principal)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
+            return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
         }
 
-        Account account = accountService.getAccount(principal.getName());
+        AccountDto account = accountService.getAccountDto(principal.getName());
         return ResponseEntity.ok().body(account);
     }
 
@@ -51,11 +52,11 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
         }
         if (accountService.isNonLocked(principal)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
+            return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();
-        Account account = accountService.updateAccountInformation(accountEmail, accountInfoRequest);
+        AccountDto account = accountService.updateAccountInformation(accountEmail, accountInfoRequest);
         return ResponseEntity.ok().body(account);
     }
 
@@ -66,7 +67,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
         }
         if (accountService.isNonLocked(principal)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
+            return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();
@@ -88,7 +89,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
         }
         if (accountService.isNonLocked(principal)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
+            return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();

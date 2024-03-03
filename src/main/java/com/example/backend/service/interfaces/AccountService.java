@@ -1,5 +1,6 @@
 package com.example.backend.service.interfaces;
 
+import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.AccountInfoRequest;
 import com.example.backend.dto.request.FindAccountDtoRequest;
 import com.example.backend.dto.request.IdTokenRequest;
@@ -18,6 +19,8 @@ public interface AccountService {
 
     Account getAccount(String email) throws AccountNotFoundException;
 
+    AccountDto getAccountDto(String email) throws AccountNotFoundException;
+
     Account getAccountByPhone(String phone) throws AccountNotFoundException;
 
     Account getAccountForLogin(FindAccountDtoRequest findAccountDtoRequest) throws AccountNotFoundException;
@@ -26,7 +29,7 @@ public interface AccountService {
 
     Account createOrUpdateUser(Account account);
 
-    Account updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) throws AccountNotFoundException;
+    AccountDto updateAccountInformation(String accountEmail, AccountInfoRequest accountInfoRequest) throws AccountNotFoundException;
 
     void updateDocumentLink(String email, String link, int page) throws AccountNotFoundException;
 
