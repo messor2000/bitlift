@@ -3,17 +3,6 @@ CREATE TABLE roles (
                        name VARCHAR(64) NOT NULL
 );
 
--- CREATE TABLE users (
---                        id SERIAL PRIMARY KEY,
---                        email VARCHAR(255) NOT NULL,
---                        username VARCHAR(64),
---                        password VARCHAR(255),
---                        first_name VARCHAR(64),
---                        last_name VARCHAR(64),
---                        is_enabled BOOL,
---                        UNIQUE(email)
--- );
-
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        email VARCHAR(255) NOT NULL,
@@ -29,6 +18,9 @@ CREATE TABLE users (
                        link_to_first_passport_page VARCHAR(255),
                        link_to_second_passport_page VARCHAR(255),
                        is_enabled BOOLEAN,
+                       is_non_locked BOOLEAN,
+                       failed_login_attempts INTEGER DEFAULT 0, -- Added column for failed login attempts
+                       last_login_attempt TIMESTAMP, -- Added column for last login attempt
                        UNIQUE(email)
 );
 

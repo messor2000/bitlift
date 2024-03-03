@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -62,22 +63,27 @@ public class AuthController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest, HttpServletResponse response) throws AccountNotFoundException {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String authToken = accountService.loginUser(authentication);
+            String authToken = accountService.loginUser(authentication);
 
-        final ResponseCookie cookie = ResponseCookie.from("AUTH-TOKEN", authToken)
-                .httpOnly(true)
-                .maxAge(7 * 24 * 3600)
-                .path("/")
-                .secure(false)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            final ResponseCookie cookie = ResponseCookie.from("AUTH-TOKEN", authToken)
+                    .httpOnly(true)
+                    .maxAge(7 * 24 * 3600)
+                    .path("/")
+                    .secure(false)
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ResponseEntity.ok(authToken);
+            return ResponseEntity.ok(authToken);
+        } catch (BadCredentialsException e) {
+            accountService.lockedUserAccount(loginRequest.getUsername());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Bad credentials");
+        }
     }
 
     @PostMapping("/oauth")
@@ -151,6 +157,8 @@ public class AuthController {
         if (!isOtpValid) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
+
+        // TODO: remove "AUTH-TOKEN" from HEADER
 
         accountService.activateUserAccount(email);
         return new ResponseEntity<>(HttpStatus.OK);

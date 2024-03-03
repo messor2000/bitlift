@@ -3,7 +3,6 @@ package com.example.backend.controller;
 import com.example.backend.dto.request.AccountInfoRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.error.AccountNotFoundException;
-import com.example.backend.service.AccountServiceImpl;
 import com.example.backend.service.AmazonService;
 import com.example.backend.service.interfaces.AccountService;
 import jakarta.validation.Valid;
@@ -31,11 +30,14 @@ public class UserController {
         return "Public Content.";
     }
 
-    @GetMapping("")
+    @GetMapping("/current")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> currentAccount(Principal principal) throws AccountNotFoundException {
-        if (!accountService.isEnabled(principal)) {
+        if (accountService.isNonEnabled(principal)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
+        }
+        if (accountService.isNonLocked(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
         }
 
         Account account = accountService.getAccount(principal.getName());
@@ -45,8 +47,11 @@ public class UserController {
     @PostMapping("/update")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> updateAccountInformation(Principal principal, @Valid @RequestBody AccountInfoRequest accountInfoRequest) throws AccountNotFoundException {
-        if (!accountService.isEnabled(principal)) {
+        if (accountService.isNonEnabled(principal)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
+        }
+        if (accountService.isNonLocked(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();
@@ -57,8 +62,11 @@ public class UserController {
     @PostMapping(path = "/update/doc/1", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> updateDocumentFirstPage(Principal principal, @RequestParam("file") MultipartFile file) throws AccountNotFoundException {
-        if (!accountService.isEnabled(principal)) {
+        if (accountService.isNonEnabled(principal)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
+        }
+        if (accountService.isNonLocked(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();
@@ -76,8 +84,11 @@ public class UserController {
     @PostMapping(path = "/update/doc/2", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> updateDocumentSecondPage(Principal principal, @RequestParam("file") MultipartFile file) throws AccountNotFoundException {
-        if (!accountService.isEnabled(principal)) {
+        if (accountService.isNonEnabled(principal)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not enabled");
+        }
+        if (accountService.isNonLocked(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is locked");
         }
 
         String accountEmail = principal.getName();

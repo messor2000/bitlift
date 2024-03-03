@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -84,6 +85,7 @@ public class AccountServiceImpl implements AccountService {
         account.setEmail(signupRequest.getEmail());
         account.setPhone(signupRequest.getPhone());
         account.setPassword(encoder.encode(signupRequest.getPassword()));
+        account.setNonLocked(true);
 
         account.setRoles(roles);
 
@@ -92,6 +94,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     public String loginUser(Authentication authentication) {
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+        Account account = getAccount(userPrincipal.getEmail());
+        account.setLastLoginAttempt(LocalDateTime.now());
+
+        userRepository.save(account);
+
         return jwtUtils.generateJwtToken(authentication, false);
     }
 
@@ -111,8 +119,10 @@ public class AccountServiceImpl implements AccountService {
 
         if (email != null) {
             return getAccount(email);
-        } else {
+        } else if (phone != null) {
             return getAccountByPhone(phone);
+        } else {
+            return null;
         }
     }
 
@@ -123,6 +133,7 @@ public class AccountServiceImpl implements AccountService {
             throw new AccountNotFoundException("Error: User can not be logged using Google account");
         }
         account = createOrUpdateUser(account);
+        account.setLastLoginAttempt(LocalDateTime.now());
         return jwtUtils.createToken(account, false);
     }
 
@@ -141,6 +152,7 @@ public class AccountServiceImpl implements AccountService {
             walletRepository.updateAccountEmailById(unusedWallet.getId(), account.getEmail());
 
             account.setAccountWallet(unusedWallet);
+            account.setNonLocked(true);
             account.setRoles(roles);
             userRepository.save(account);
             return account;
@@ -185,6 +197,29 @@ public class AccountServiceImpl implements AccountService {
         userRepository.save(account);
     }
 
+    public void lockedUserAccount(String email) {
+        Account account = getAccount(email);
+        if (account.getFailedLoginAttempts() == 4) {
+            account.setNonLocked(false);
+        } else {
+            int failedLoginAttempts = account.getFailedLoginAttempts();
+            account.setFailedLoginAttempts(++failedLoginAttempts);
+        }
+
+        userRepository.save(account);
+    }
+
+    public boolean isNonEnabled(Principal principal) {
+        String accountEmail = principal.getName();
+        Account account = getAccount(accountEmail);
+        return !account.isEnabled();
+    }
+
+    public boolean isNonLocked(Principal principal) {
+        String accountEmail = principal.getName();
+        Account account = getAccount(accountEmail);
+        return !account.isNonLocked();
+    }
 
     private Account verifyIDToken(String idToken) {
         try {
@@ -202,11 +237,5 @@ public class AccountServiceImpl implements AccountService {
         } catch (GeneralSecurityException | IOException e) {
             return null;
         }
-    }
-
-    public boolean isEnabled(Principal principal) {
-        String accountEmail = principal.getName();
-        Account account = getAccount(accountEmail);
-        return account.isEnabled();
     }
 }

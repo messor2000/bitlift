@@ -32,5 +32,9 @@ public interface AccountService {
 
     void activateUserAccount(String email) throws AccountNotFoundException;
 
-    boolean isEnabled(Principal principal) throws AccountNotFoundException;
+    void lockedUserAccount(String email);
+
+    boolean isNonEnabled(Principal principal) throws AccountNotFoundException;
+
+    boolean isNonLocked(Principal principal) throws AccountNotFoundException;
 }

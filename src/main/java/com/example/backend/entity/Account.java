@@ -3,6 +3,9 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -60,6 +63,29 @@ public class Account {
 
     @Column(name = "is_enabled")
     private boolean isEnabled;
+
+    private boolean isNonLocked;
+
+    private int failedLoginAttempts;
+
+    private LocalDateTime lastLoginAttempt;
+//
+//    public boolean isAccountLocked() {
+//        // Implement logic to check if the account is locked
+//        final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
+//        final Duration LOCKOUT_DURATION = Duration.ofHours(2);
+//
+//        if (failedLoginAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+//            // Check if the last login attempt was within the lockout duration
+//            LocalDateTime now = LocalDateTime.now();
+//            LocalDateTime lockoutEndTime = lastLoginAttempt.plus(LOCKOUT_DURATION);
+//            return now.isBefore(lockoutEndTime);
+//        }
+//        return false;
+//    }
+
+     // TODO: add verifications documents
+   // private int failedDocumentsVerificationAttempts;
 
     public Account(String email, String firstName, String lastName) {
         this.email = email;
