@@ -2,7 +2,6 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.AccountInfoRequest;
-import com.example.backend.entity.Account;
 import com.example.backend.error.AccountNotFoundException;
 import com.example.backend.service.AmazonService;
 import com.example.backend.service.interfaces.AccountService;
@@ -40,6 +39,9 @@ public class UserController {
         if (accountService.isNonLocked(principal)) {
             return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
         }
+        if (accountService.isNonFullyActivated(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not activated");
+        }
 
         AccountDto account = accountService.getAccountDto(principal.getName());
         return ResponseEntity.ok().body(account);
@@ -53,6 +55,9 @@ public class UserController {
         }
         if (accountService.isNonLocked(principal)) {
             return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
+        }
+        if (accountService.isNonFullyActivated(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not activated");
         }
 
         String accountEmail = principal.getName();
@@ -68,6 +73,9 @@ public class UserController {
         }
         if (accountService.isNonLocked(principal)) {
             return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
+        }
+        if (accountService.isNonFullyActivated(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not activated");
         }
 
         String accountEmail = principal.getName();
@@ -90,6 +98,9 @@ public class UserController {
         }
         if (accountService.isNonLocked(principal)) {
             return ResponseEntity.status(HttpStatus.LOCKED).body("Account is locked");
+        }
+        if (accountService.isNonFullyActivated(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is not activated");
         }
 
         String accountEmail = principal.getName();

@@ -1,9 +1,11 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.*;
 import com.example.backend.entity.Account;
 import com.example.backend.error.AccountAlreadyExistsException;
 import com.example.backend.error.AccountNotFoundException;
+import com.example.backend.error.PasswordMissmatchException;
 import com.example.backend.service.CaptchaService;
 import com.example.backend.service.EmailService;
 import com.example.backend.service.SmsService;
@@ -40,10 +42,10 @@ public class AuthController {
     private final CaptchaService captchaService;
     AuthenticationManager authenticationManager;
 
-    @GetMapping("/user")
+    @PostMapping("/user")
     public ResponseEntity<?> getAccountByMailOrPhone(@RequestBody FindAccountDtoRequest findAccountDtoRequest,
                                                      HttpServletResponse response) throws AccountNotFoundException {
-        Account account = accountService.getAccountForLogin(findAccountDtoRequest);
+        AccountDto account = accountService.getAccountByEmailOrPhone(findAccountDtoRequest);
 
         return ResponseEntity.ok(Objects.requireNonNullElse(account, HttpStatus.NOT_FOUND));
     }
@@ -114,7 +116,7 @@ public class AuthController {
 
         if (emailDTO != null) {
             if (emailService.sendSimpleMessage(emailDTO)) {
-                System.out.println("OTP Confirmed");
+                System.out.println("OTP sent to user email");
                 return ResponseEntity.ok(HttpStatus.OK);
             }
         }
@@ -128,9 +130,11 @@ public class AuthController {
 
         int otp = otpService.generateOtp(account.getEmail());
 
-        smsService.sendSms(account.getPhone(), otp);
+        if (smsService.sendSms(account.getPhone(), otp)) {
+            return ResponseEntity.ok(HttpStatus.OK);
+        }
 
-        return ResponseEntity.ok(HttpStatus.OK);
+        return ResponseEntity.ok(HttpStatus.BAD_REQUEST);
     }
 
     @PostMapping(value = "/captcha/verify")
@@ -181,6 +185,64 @@ public class AuthController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PostMapping(value = "/forget/password")
+    public ResponseEntity<?> forgetPassword(@Valid @RequestBody FindAccountDtoRequest findAccountDtoRequest) throws AccountNotFoundException {
+        if (findAccountDtoRequest.getAccountEmail() != null) {
+            AccountDto account = accountService.getAccountByEmailOrPhone(findAccountDtoRequest);
+            String accountEmail = account.getEmail();
+
+            if (accountEmail != null) {
+                int otp = otpService.generateOtp(accountEmail);
+
+                EmailDtoRequest emailDTO = null;
+                if (otp != 0) {
+                    emailDTO = emailService.generateOptMail(accountEmail, otp);
+                }
+
+                if (emailDTO != null) {
+                    if (emailService.sendSimpleMessage(emailDTO)) {
+                        System.out.println("OTP sent to user email");
+                        return ResponseEntity.ok(HttpStatus.OK);
+                    }
+                }
+            }
+        } else if (findAccountDtoRequest.getAccountPhone() != null) {
+            AccountDto account = accountService.getAccountByEmailOrPhone(findAccountDtoRequest);
+            String accountPhone = account.getPhone();
+
+            if (accountPhone != null) {
+                int otp = otpService.generateOtp(account.getEmail());
+
+                if (smsService.sendSms(account.getPhone(), otp)) {
+                    return ResponseEntity.ok(HttpStatus.OK);
+                }
+            }
+        }
+
+        return ResponseEntity.ok(ResponseEntity.badRequest());
+    }
+
+    @PostMapping(value = "/create/password")
+    public ResponseEntity<?> createNewPassword(@Valid @RequestBody CreateNewPasswordDtoRequest createNewPasswordDtoRequest) throws AccountNotFoundException, PasswordMissmatchException {
+        FindAccountDtoRequest findAccountDtoRequest = new FindAccountDtoRequest(createNewPasswordDtoRequest.getAccountEmail(), createNewPasswordDtoRequest.getAccountPhone());
+        AccountDto account = accountService.getAccountByEmailOrPhone(findAccountDtoRequest);
+        String email = account.getEmail();
+        Integer otp = createNewPasswordDtoRequest.getOtp();
+
+        boolean isOtpValid = otpService.validateOTP(email, otp);
+        if (!isOtpValid) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        AccountDto accountDto = accountService.createNewPassword(createNewPasswordDtoRequest, account);
+
+        if (accountDto != null) {
+            return ResponseEntity.ok(HttpStatus.OK);
+        }
+
+        return ResponseEntity.ok(ResponseEntity.badRequest());
+    }
+
     @ExceptionHandler(value = AccountAlreadyExistsException.class)
     public ResponseEntity<String> AccountAlreadyExistException(AccountAlreadyExistsException AccountAlreadyExistsException) {
         return new ResponseEntity<>("Account already exists", HttpStatus.CONFLICT);
@@ -189,5 +251,10 @@ public class AuthController {
     @ExceptionHandler(value = AccountNotFoundException.class)
     public ResponseEntity<String> AccountNotFoundException(AccountNotFoundException accountNotFoundException) {
         return new ResponseEntity<>("Account not found", HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(value = PasswordMissmatchException.class)
+    public ResponseEntity<String> PasswordMissmatchException(PasswordMissmatchException passwordMissmatchException) {
+        return new ResponseEntity<>("Password mismatch", HttpStatus.CONFLICT);
     }
 }

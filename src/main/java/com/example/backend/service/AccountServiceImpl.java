@@ -2,20 +2,19 @@ package com.example.backend.service;
 
 import com.example.backend.config.jwt.JwtUtils;
 import com.example.backend.dto.AccountDto;
-import com.example.backend.dto.request.AccountInfoRequest;
-import com.example.backend.dto.request.FindAccountDtoRequest;
-import com.example.backend.dto.request.IdTokenRequest;
-import com.example.backend.dto.request.SignupRequest;
+import com.example.backend.dto.request.*;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.AccountWallet;
 import com.example.backend.entity.ERole;
 import com.example.backend.entity.Role;
 import com.example.backend.error.AccountAlreadyExistsException;
 import com.example.backend.error.AccountNotFoundException;
+import com.example.backend.error.PasswordMissmatchException;
 import com.example.backend.repo.AccountWalletRepository;
 import com.example.backend.repo.RoleRepository;
 import com.example.backend.repo.UserRepository;
 import com.example.backend.service.interfaces.AccountService;
+import com.example.backend.util.SimplePage;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -23,6 +22,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,7 +36,9 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountServiceImpl implements AccountService {
@@ -123,14 +126,14 @@ public class AccountServiceImpl implements AccountService {
                 new AccountNotFoundException("Error: User does not exists by provided phone in the database."));
     }
 
-    public Account getAccountForLogin(FindAccountDtoRequest findAccountDtoRequest) {
+    public AccountDto getAccountByEmailOrPhone(FindAccountDtoRequest findAccountDtoRequest) {
         String email = findAccountDtoRequest.getAccountEmail();
         String phone = findAccountDtoRequest.getAccountPhone();
 
         if (email != null) {
-            return getAccount(email);
+            return mapToDTO(getAccount(email));
         } else if (phone != null) {
-            return getAccountByPhone(phone);
+            return mapToDTO(getAccountByPhone(phone));
         } else {
             return null;
         }
@@ -187,8 +190,45 @@ public class AccountServiceImpl implements AccountService {
         userRepository.save(existingAccount);
 
         return getAccountDto(accountEmail);
+    }
 
-//        return existingAccount;
+    public SimplePage<AccountDto> findAll(final Pageable pageable) {
+        Page<Account> page = userRepository.findAll(pageable);
+        List<AccountDto> accountDtos = page.getContent().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+        return new SimplePage<>(accountDtos, pageable, page.getTotalElements());
+    }
+
+//    public void forgetPassword(FindAccountDtoRequest findAccountDtoRequest) {
+//        String email = findAccountDtoRequest.getAccountEmail();
+//        String phone = findAccountDtoRequest.getAccountPhone();
+//
+//        Account account = null;
+//
+//        if (email != null) {
+//            account = getAccount(email);
+//        } else if (phone != null) {
+//            account = getAccountByPhone(phone);
+//        } else {
+//            throw new AccountNotFoundException("Error: Error during resetting password: Account not found");
+//        }
+//
+//
+//    }
+
+    public AccountDto createNewPassword(CreateNewPasswordDtoRequest createNewPasswordDtoRequest, AccountDto accountDto) {
+        Account account = getAccount(accountDto.getEmail());
+
+        if (createNewPasswordDtoRequest.getNewPassword().equals(createNewPasswordDtoRequest.getConfirmNewPassword())) {
+            account.setPassword(encoder.encode(createNewPasswordDtoRequest.getNewPassword()));
+        } else {
+            throw new PasswordMissmatchException("Password mismatch");
+        }
+
+        Account updatedAccount = userRepository.save(account);
+
+        return mapToDTO(updatedAccount);
     }
 
     public void updateDocumentLink(String email, String link, int page) {
@@ -222,6 +262,22 @@ public class AccountServiceImpl implements AccountService {
         userRepository.save(account);
     }
 
+    public void verifyUserDocuments(String email) {
+        Account account = getAccount(email);
+        account.setFullyActivated(true);
+
+        userRepository.save(account);
+    }
+
+    public void nonVerifyUserDocuments(String email) {
+        Account account = getAccount(email);
+        if (account.isFullyActivated()) {
+            account.setFullyActivated(false);
+        }
+
+        userRepository.save(account);
+    }
+
     public boolean isNonEnabled(Principal principal) {
         String accountEmail = principal.getName();
         Account account = getAccount(accountEmail);
@@ -232,6 +288,12 @@ public class AccountServiceImpl implements AccountService {
         String accountEmail = principal.getName();
         Account account = getAccount(accountEmail);
         return !account.isNonLocked();
+    }
+
+    public boolean isNonFullyActivated(Principal principal) {
+        String accountEmail = principal.getName();
+        Account account = getAccount(accountEmail);
+        return account.isFullyActivated();
     }
 
     private Account verifyIDToken(String idToken) {
@@ -250,5 +312,21 @@ public class AccountServiceImpl implements AccountService {
         } catch (GeneralSecurityException | IOException e) {
             return null;
         }
+    }
+
+    private AccountDto mapToDTO(Account account) {
+        AccountDto accountDto = new AccountDto();
+        accountDto.setEmail(account.getEmail());
+        accountDto.setPhone(account.getPhone());
+        accountDto.setUsername(account.getUsername());
+        accountDto.setFirstName(account.getFirstName());
+        accountDto.setLastName(account.getLastName());
+        accountDto.setFatherName(account.getFatherName());
+        accountDto.setAddress(account.getAddress());
+        accountDto.setZipCode(account.getZipCode());
+        accountDto.setCity(account.getCity());
+        accountDto.setCountry(account.getCountry());
+        accountDto.setDocumentCountry(account.getDocumentCountry());
+        return accountDto;
     }
 }

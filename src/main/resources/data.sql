@@ -18,7 +18,8 @@ INSERT INTO users (email,
                    is_enabled,
                    is_non_locked,
                    failed_login_attempts,
-                   last_login_attempt
+                   last_login_attempt,
+                   is_fully_activated
 )
 VALUES ('admin@gmail.com', -- email
         'admin', -- username
@@ -35,7 +36,8 @@ VALUES ('admin@gmail.com', -- email
         true,
         true,
         0,
-        NULL);
+        NULL,
+        true);
 
 -- Insert user_roles (assigning 'ROLE_ADMIN' to the first user)
 INSERT INTO user_roles (user_id, role_id)

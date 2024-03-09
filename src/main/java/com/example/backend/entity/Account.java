@@ -72,6 +72,8 @@ public class Account {
 
     private LocalDateTime lastLoginAttempt;
 
+    private boolean isFullyActivated;
+
      // TODO: add verifications documents
    // private int failedDocumentsVerificationAttempts;
 
