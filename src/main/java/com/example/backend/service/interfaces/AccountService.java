@@ -5,6 +5,7 @@ import com.example.backend.dto.request.*;
 import com.example.backend.entity.Account;
 import com.example.backend.error.AccountAlreadyExistsException;
 import com.example.backend.error.AccountNotFoundException;
+import com.example.backend.error.OldPasswordMissmatchException;
 import com.example.backend.error.PasswordMissmatchException;
 import com.example.backend.util.SimplePage;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +34,7 @@ public interface AccountService {
 
     SimplePage<AccountDto> findAll(final Pageable pageable);
 
-//    void forgetPassword(FindAccountDtoRequest findAccountDtoRequest) throws AccountNotFoundException;
+    AccountDto changePassword(ChangePasswordDtoRequest changePasswordDtoRequest, Principal principal) throws AccountNotFoundException, PasswordMissmatchException, OldPasswordMissmatchException;
 
     AccountDto createNewPassword(CreateNewPasswordDtoRequest createNewPasswordDtoRequest, AccountDto accountDto) throws AccountNotFoundException, PasswordMissmatchException;
 
@@ -43,9 +44,7 @@ public interface AccountService {
 
     void lockedUserAccount(String email) throws AccountNotFoundException;
 
-    void verifyUserDocuments(String email) throws AccountNotFoundException;
-
-    void nonVerifyUserDocuments(String email) throws AccountNotFoundException;
+    void changeAccountVerificationStatus(ChangeAccountVerificationStatusDtoRequest changeAccountVerificationStatusDtoRequest) throws AccountNotFoundException;
 
     boolean isNonEnabled(Principal principal) throws AccountNotFoundException;
 

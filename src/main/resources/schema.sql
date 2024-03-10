@@ -21,7 +21,7 @@ CREATE TABLE users (
                        is_non_locked BOOLEAN,
                        failed_login_attempts INTEGER DEFAULT 0, -- Added column for failed login attempts
                        last_login_attempt TIMESTAMP, -- Added column for last login attempt
-                       is_fully_activated BOOLEAN,
+                       is_verified BOOLEAN,
                        UNIQUE(email)
 );
 

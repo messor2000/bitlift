@@ -2,7 +2,10 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.AccountDto;
 import com.example.backend.dto.request.AccountInfoRequest;
+import com.example.backend.dto.request.ChangePasswordDtoRequest;
 import com.example.backend.error.AccountNotFoundException;
+import com.example.backend.error.OldPasswordMissmatchException;
+import com.example.backend.error.PasswordMissmatchException;
 import com.example.backend.service.AmazonService;
 import com.example.backend.service.interfaces.AccountService;
 import jakarta.validation.Valid;
@@ -115,8 +118,30 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping(value = "/updated/password")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> updatePassword(@Valid @RequestBody ChangePasswordDtoRequest changePasswordDtoRequest, Principal principal) throws AccountNotFoundException, PasswordMissmatchException, OldPasswordMissmatchException {
+        AccountDto accountDto = accountService.changePassword(changePasswordDtoRequest, principal);
+
+        if (accountDto != null) {
+            return ResponseEntity.ok(HttpStatus.OK);
+        }
+
+        return ResponseEntity.ok(ResponseEntity.badRequest());
+    }
+
     @ExceptionHandler(value = AccountNotFoundException.class)
     public ResponseEntity<String> AccountNotFoundException(AccountNotFoundException accountNotFoundException) {
         return new ResponseEntity<>("Account not found", HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(value = PasswordMissmatchException.class)
+    public ResponseEntity<String> PasswordMissmatchException(PasswordMissmatchException passwordMissmatchException) {
+        return new ResponseEntity<>("Password mismatch", HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(value = OldPasswordMissmatchException.class)
+    public ResponseEntity<String> OldPasswordMissmatchException(OldPasswordMissmatchException oldPasswordMissmatchException) {
+        return new ResponseEntity<>("Old password is incorrect", HttpStatus.CONFLICT);
     }
 }

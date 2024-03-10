@@ -1,11 +1,13 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.AccountDto;
+import com.example.backend.dto.request.ChangeAccountVerificationStatusDtoRequest;
 import com.example.backend.dto.request.NewWalletRequest;
 import com.example.backend.entity.AccountWallet;
 import com.example.backend.service.WalletService;
 import com.example.backend.service.interfaces.AccountService;
 import com.example.backend.util.SimplePage;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -37,13 +39,12 @@ public class AdminController {
         return ResponseEntity.ok(accountService.findAll(pageable));
     }
 
-    // TODO; approve/not approve account by admin
-//    @PostMapping("/approve")
-//    public ResponseEntity<List<AccountDto>> getAccounts() {
-//        List<AccountDto> allAccounts = accountService.getAllAccount();
-//
-//        return allAccounts;
-//    }
+    @PostMapping("/change/user/verification")
+    public ResponseEntity<List<AccountDto>> approveUserAccount(@Valid @RequestBody ChangeAccountVerificationStatusDtoRequest changeAccountVerificationStatusDtoRequest) {
+        accountService.changeAccountVerificationStatus(changeAccountVerificationStatusDtoRequest);
+
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/wallet")
     public ResponseEntity<AccountWallet> addNewWallet(@RequestBody NewWalletRequest walletRequest) {

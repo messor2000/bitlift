@@ -3,9 +3,7 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,7 +70,7 @@ public class Account {
 
     private LocalDateTime lastLoginAttempt;
 
-    private boolean isFullyActivated;
+    private boolean isVerified;
 
      // TODO: add verifications documents
    // private int failedDocumentsVerificationAttempts;

@@ -19,7 +19,7 @@ INSERT INTO users (email,
                    is_non_locked,
                    failed_login_attempts,
                    last_login_attempt,
-                   is_fully_activated
+                   is_verified
 )
 VALUES ('admin@gmail.com', -- email
         'admin', -- username

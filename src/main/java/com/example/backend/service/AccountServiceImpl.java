@@ -9,6 +9,7 @@ import com.example.backend.entity.ERole;
 import com.example.backend.entity.Role;
 import com.example.backend.error.AccountAlreadyExistsException;
 import com.example.backend.error.AccountNotFoundException;
+import com.example.backend.error.OldPasswordMissmatchException;
 import com.example.backend.error.PasswordMissmatchException;
 import com.example.backend.repo.AccountWalletRepository;
 import com.example.backend.repo.RoleRepository;
@@ -184,12 +185,13 @@ public class AccountServiceImpl implements AccountService {
             existingAccount.setZipCode(accountInfoRequest.getZipCode());
             existingAccount.setCity(accountInfoRequest.getCity());
             existingAccount.setCountry(accountInfoRequest.getCountry());
+            existingAccount.setDocumentCountry(accountInfoRequest.getDocumentCountry());
         }
 
         assert existingAccount != null;
-        userRepository.save(existingAccount);
+        Account updatedAccount = userRepository.save(existingAccount);
 
-        return getAccountDto(accountEmail);
+        return mapToDTO(updatedAccount);
     }
 
     public SimplePage<AccountDto> findAll(final Pageable pageable) {
@@ -200,23 +202,6 @@ public class AccountServiceImpl implements AccountService {
         return new SimplePage<>(accountDtos, pageable, page.getTotalElements());
     }
 
-//    public void forgetPassword(FindAccountDtoRequest findAccountDtoRequest) {
-//        String email = findAccountDtoRequest.getAccountEmail();
-//        String phone = findAccountDtoRequest.getAccountPhone();
-//
-//        Account account = null;
-//
-//        if (email != null) {
-//            account = getAccount(email);
-//        } else if (phone != null) {
-//            account = getAccountByPhone(phone);
-//        } else {
-//            throw new AccountNotFoundException("Error: Error during resetting password: Account not found");
-//        }
-//
-//
-//    }
-
     public AccountDto createNewPassword(CreateNewPasswordDtoRequest createNewPasswordDtoRequest, AccountDto accountDto) {
         Account account = getAccount(accountDto.getEmail());
 
@@ -224,6 +209,25 @@ public class AccountServiceImpl implements AccountService {
             account.setPassword(encoder.encode(createNewPasswordDtoRequest.getNewPassword()));
         } else {
             throw new PasswordMissmatchException("Password mismatch");
+        }
+
+        Account updatedAccount = userRepository.save(account);
+
+        return mapToDTO(updatedAccount);
+    }
+
+    public AccountDto changePassword(ChangePasswordDtoRequest changePasswordDtoRequest, Principal principal) {
+        Account account = getAccount(principal.getName());
+
+        boolean checkPassword = isTruePassword(account, changePasswordDtoRequest.getOldPassword());
+        if (checkPassword) {
+            if (changePasswordDtoRequest.getNewPassword().equals(changePasswordDtoRequest.getConfirmNewPassword())) {
+                account.setPassword(encoder.encode(changePasswordDtoRequest.getNewPassword()));
+            } else {
+                throw new PasswordMissmatchException("New password mismatch");
+            }
+        } else {
+            throw new OldPasswordMissmatchException("Old password is incorrect");
         }
 
         Account updatedAccount = userRepository.save(account);
@@ -262,17 +266,18 @@ public class AccountServiceImpl implements AccountService {
         userRepository.save(account);
     }
 
-    public void verifyUserDocuments(String email) {
-        Account account = getAccount(email);
-        account.setFullyActivated(true);
+    public void changeAccountVerificationStatus(ChangeAccountVerificationStatusDtoRequest changeAccountVerificationStatusDtoRequest) {
+        Account account = getAccount(changeAccountVerificationStatusDtoRequest.getAccountEmail());
+        boolean isVerified = changeAccountVerificationStatusDtoRequest.isVerificationStatus();
 
-        userRepository.save(account);
-    }
-
-    public void nonVerifyUserDocuments(String email) {
-        Account account = getAccount(email);
-        if (account.isFullyActivated()) {
-            account.setFullyActivated(false);
+        if (isVerified) {
+            if (!account.isVerified()) {
+                account.setVerified(true);
+            }
+        } else {
+            if (account.isVerified()) {
+                account.setVerified(false);
+            }
         }
 
         userRepository.save(account);
@@ -293,7 +298,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean isNonFullyActivated(Principal principal) {
         String accountEmail = principal.getName();
         Account account = getAccount(accountEmail);
-        return account.isFullyActivated();
+        return account.isVerified();
     }
 
     private Account verifyIDToken(String idToken) {
@@ -328,5 +333,11 @@ public class AccountServiceImpl implements AccountService {
         accountDto.setCountry(account.getCountry());
         accountDto.setDocumentCountry(account.getDocumentCountry());
         return accountDto;
+    }
+
+    private boolean isTruePassword(Account account, String oldPassword) {
+        String userOldPassword = account.getPassword();
+
+        return encoder.matches(oldPassword, userOldPassword);
     }
 }
